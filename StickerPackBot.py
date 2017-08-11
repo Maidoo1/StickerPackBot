@@ -13,13 +13,14 @@ def start(message):
 
 @bot.message_handler(content_types=['sticker'])
 def create_pack(message):
-    try:
-        sticker = message.sticker.file_id
-        bot.send_message(message.chat.id, sticker)
-        bot.send_sticker(message.chat.id, sticker)
-        # print(sticker)
-    except:
-        bot.send_message(message.chat.id, 'Something went wrong')
+    file_info = bot.get_file(message.sticker.file_id)
+    print(file_info)
+    file_download = bot.download_file(file_info.file_path)
+    print(file_download)
+    src = file_info.file_path
+
+    with open(src, 'wb') as new_file:
+        new_file.write(file_download)
 
 if __name__ == '__main__':
     bot.polling(none_stop=True)
