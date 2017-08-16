@@ -28,7 +28,6 @@ class Sticker:
 
     def create_sticker_pack(self, message):
         src = self.upload_sticker(message)
-        self.max_pack -= 1
         self.pack_name = self.pack_name + '_by_stickerpackbot'
 
         with open(src, 'rb') as send_file:
@@ -37,13 +36,13 @@ class Sticker:
 
     def add_sticker_to_pack(self, message):
         src = self.upload_sticker(message)
-        self.max_pack -= 1
 
         with open(src, 'rb') as send_file:
             bot.add_sticker_to_set(message.from_user.id, self.pack_name, send_file, message.sticker.emoji, None)
 
     def clean_folder(self):
         [os.remove(i) for i in self.stickers]
+
 
 user_dict = {}
 
@@ -81,10 +80,11 @@ def create_pack(message):
     user_dict[message.chat.id].create_sticker_pack(message)
 
     request = bot.send_message(message.chat.id, 'Sticker #1 has been added\n'
-                                                'You can add only ' + str(user_dict[message.chat.id].max_pack) +
-                               ' stickers\n'
-                               'Send next sticker\n'
-                               'Or pass /stop')
+                                                'You can add only ' + str(user_dict[message.chat.id].max_pack -
+                                                                          len(user_dict[message.chat.id].stickers)) +
+                                                ' stickers\n'
+                                                'Send next sticker\n'
+                                                'Or pass /stop')
     bot.register_next_step_handler(request, add_sticker)
 
 
@@ -94,9 +94,10 @@ def add_sticker(message):
         return bot.send_message(message.chat.id, 't.me/addstickers/' + user_dict[message.chat.id].pack_name)
 
     user_dict[message.chat.id].add_sticker_to_pack(message)
-    request = bot.send_message(message.chat.id, 'Sticker #' + str(120 - user_dict[message.chat.id].max_pack) +
+    request = bot.send_message(message.chat.id, 'Sticker #' + str(len(user_dict[message.chat.id].stickers)) +
                                ' has been added\n'
-                               'You can add only ' + str(user_dict[message.chat.id].max_pack) + ' stickers\n'
+                               'You can add only ' + str(user_dict[message.chat.id].max_pack -
+                                                         len(user_dict[message.chat.id].stickers)) + ' stickers\n'
                                'Send next sticker\n'
                                'Or pass /stop')
     bot.register_next_step_handler(request, add_sticker)
