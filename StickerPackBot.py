@@ -12,36 +12,42 @@ class Stickers:
         self.user_id = user_id
         self.stickers = []
         self.pack_name = 'None'
+        self.src = 'None'
         self.max_pack = 120
 
     def upload_sticker(self, message):
         file_info = bot.get_file(message.sticker.file_id)
         downloaded_file = bot.download_file(file_info.file_path)
 
-        src = file_info.file_path[:-4] + 'png'
-        self.stickers.append(src)
+        self.src = file_info.file_path[:-4] + 'png'
+
+        with open(self.src, 'wb') as new_file:
+            new_file.write(downloaded_file)
 
         bot.send_message(message.chat.id, 'Sticker #' + str(len(self.stickers)) + ' has been added\n'
                                           'You can add only ' + str(self.max_pack - len(self.stickers)) + ' stickers')
 
-        with open(src, 'wb') as new_file:
-            new_file.write(downloaded_file)
-
-        return src
+    def is_upload(self):
+        return True if self.src in self.stickers else False
 
     def create_sticker_pack(self, message):
-        src = self.upload_sticker(message)
-
-        with open(src, 'rb') as send_file:
+        self.upload_sticker(message)
+        self.stickers.append(self.src)
+        with open(self.src, 'rb') as send_file:
             bot.create_new_sticker_set(self.user_id, self.pack_name + '_by_stickerpackbot',
                                        self.pack_name, send_file, message.sticker.emoji)
 
     def add_sticker_to_pack(self, message):
-        src = self.upload_sticker(message)
-
-        with open(src, 'rb') as send_file:
-            bot.add_sticker_to_set(message.from_user.id, self.pack_name + '_by_stickerpackbot',
-                                   send_file, message.sticker.emoji, None)
+        self.upload_sticker(message)
+        print(self.src)
+        print(self.stickers)
+        if not self.is_upload():
+            self.stickers.append(self.src)
+            with open(self.src, 'rb') as send_file:
+                bot.add_sticker_to_set(message.from_user.id, self.pack_name + '_by_stickerpackbot',
+                                       send_file, message.sticker.emoji, None)
+        else:
+            return bot.send_message(message.chat.id, 'go away')
 
     def clean_folder(self):
         [os.remove(i) for i in self.stickers]
