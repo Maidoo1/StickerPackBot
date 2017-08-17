@@ -24,9 +24,6 @@ class Stickers:
         with open(self.src, 'wb') as new_file:
             new_file.write(downloaded_file)
 
-        bot.send_message(message.chat.id, 'Sticker #' + str(len(self.stickers)) + ' has been added\n'
-                                          'You can add only ' + str(self.max_pack - len(self.stickers)) + ' stickers')
-
     def is_upload(self):
         return True if self.src in self.stickers else False
 
@@ -37,17 +34,21 @@ class Stickers:
             bot.create_new_sticker_set(self.user_id, self.pack_name + '_by_stickerpackbot',
                                        self.pack_name, send_file, message.sticker.emoji)
 
+        bot.send_message(message.chat.id, 'Sticker #' + str(len(self.stickers)) + ' has been added\n'
+                         'You can add only ' + str(self.max_pack - len(self.stickers)) + ' stickers')
+
     def add_sticker_to_pack(self, message):
         self.upload_sticker(message)
-        print(self.src)
-        print(self.stickers)
         if not self.is_upload():
             self.stickers.append(self.src)
             with open(self.src, 'rb') as send_file:
                 bot.add_sticker_to_set(message.from_user.id, self.pack_name + '_by_stickerpackbot',
                                        send_file, message.sticker.emoji, None)
+
+            bot.send_message(message.chat.id, 'Sticker #' + str(len(self.stickers)) + ' has been added\n'
+                             'You can add only ' + str(self.max_pack - len(self.stickers)) + ' stickers')
         else:
-            return bot.send_message(message.chat.id, 'go away')
+            return bot.send_message(message.chat.id, 'This sticker is in pack already!')
 
     def clean_folder(self):
         [os.remove(i) for i in self.stickers]
@@ -73,7 +74,7 @@ def pack_from_stickers_name(message):
 def sticker_pack_name(message):
     user_dict[message.chat.id].pack_name = str(message.text)
 
-    request = bot.send_message(message.chat.id, 'Send first sticker')
+    request = bot.send_message(message.chat.id, 'Send sticker')
     bot.register_next_step_handler(request, create_pack)
 
 
