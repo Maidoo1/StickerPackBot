@@ -14,6 +14,11 @@ class Stickers:
         self.src = None
         self.max_pack = 120
 
+    @staticmethod
+    def register_next_step(message, text, func):
+        request = bot.send_message(message.chat.id, text)
+        bot.register_next_step_handler(request, func)
+
     def upload_sticker(self, message):
         file_info = bot.get_file(message.sticker.file_id)
         downloaded_file = bot.download_file(file_info.file_path)
@@ -66,25 +71,19 @@ def start(message):
 @bot.message_handler(commands=['pack_from_stickers'])
 def pack_from_stickers_name(message):
     user_dict[message.chat.id] = Stickers()
-
-    request = bot.send_message(message.chat.id, 'Pass the sticker pack name')
-    bot.register_next_step_handler(request, sticker_pack_name)
+    Stickers.register_next_step(message, 'Pass the sticker name', sticker_pack_name)
 
 
 def sticker_pack_name(message):
     user_dict[message.chat.id].pack_name = str(message.text)
-
-    request = bot.send_message(message.chat.id, 'Send sticker')
-    bot.register_next_step_handler(request, create_pack)
+    Stickers.register_next_step(message, 'Send sticker', create_pack)
 
 
 @bot.message_handler(content_types=['text, sticker'])
 def create_pack(message):
     user_dict[message.chat.id].create_sticker_pack(message)
-
-    request = bot.send_message(message.chat.id, 'Send next sticker\n'
-                                                'Or pass /stop to finish your sticker pack')
-    bot.register_next_step_handler(request, add_sticker)
+    Stickers.register_next_step(message, 'Send next sticker\n'
+                                         'Or pass /stop to finish your sticker pack', add_sticker)
 
 
 def add_sticker(message):
@@ -94,28 +93,24 @@ def add_sticker(message):
                                 + '_by_stickerpackbot')
 
     user_dict[message.chat.id].add_sticker_to_pack(message)
-    request = bot.send_message(message.chat.id, 'Send next sticker\n'
-                                                'Or pass /stop to finish your sticker pack')
-    bot.register_next_step_handler(request, add_sticker)
+    Stickers.register_next_step(message, 'Send next sticker\n'
+                                         'Or pass /stop to finish your sticker pack', add_sticker)
 
 
 @bot.message_handler(commands=['add_sticker_to_pack'])
 def add_sticker_pass_name(message):
-    request = bot.send_message(message.chat.id, 'Pass the sticker pack name')
-    bot.register_next_step_handler(request, add_sticker_to_pack_name)
+    Stickers.register_next_step(message, 'Pass the sticker pack name', add_sticker_to_pack_name)
 
 
 @bot.message_handler(content_types=['text, sticker'])
 def add_sticker_to_pack_name(message):
     try:
         name = str(message.text)
-        bot.get_sticker_set(name + '_by_stickerpackbot')
+        pack = bot.get_sticker_set(name + '_by_stickerpackbot')
         user_dict[message.chat.id] = Stickers()
         user_dict[message.chat.id].pack_name = name
-        # bot.send_message(message.chat.id, pack)
-        # [bot.send_message(message.chat.id, i) for i in pack.stickers]
-        request = bot.send_message(message.chat.id, 'Send sticker')
-        bot.register_next_step_handler(request, add_sticker_to_pack)
+        user_dict[message.chat.id].max_pack -= len(pack.stickers)
+        Stickers.register_next_step(message, 'Send sticker', add_sticker_to_pack)
     except:
         bot.send_message(message.chat.id, 'Sticker pack is not exist')
         add_sticker_pass_name(message)
@@ -128,8 +123,8 @@ def add_sticker_to_pack(message):
                                 + '_by_stickerpackbot')
     else:
         user_dict[message.chat.id].add_sticker_to_pack(message)
-        request = bot.send_message(message.chat.id, 'add next sticker')
-        bot.register_next_step_handler(request, add_sticker_to_pack)
+        Stickers.register_next_step(message, 'Send next sticker\n'
+                                             'Or pass /stop to finish your sticker pack', add_sticker_to_pack)
 
 
 if __name__ == '__main__':
